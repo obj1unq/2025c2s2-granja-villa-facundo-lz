@@ -5,38 +5,36 @@ object personaje {
 	var property position = game.center()
 	const property image = "fplayer.png"
 	const inventario = #{}
-	const aspersores = #{}
-	const cultivados = cultivos
-	const aspersores = aspersores
+	const cultivosEnGranja = cultivos
+	const aspersoresEnGranja = aspersores
+	const mercadosEnGranja = mercados
 	var monedas = 0
 
 	method sembrar(semilla){
 		self.validarSembrado()
-		semilla.position(position)
-		game.addVisual(semilla)
-		cultivados.agregarCultivo(semilla)
+		cultivosEnGranja.agregarCultivo(semilla)
 	}
 
 	method validarSembrado(){
-		if (cultivados.hayCultivoAca(position)){
+		if (cultivosEnGranja.hayCultivoAca(position)){
 			self.error("Ya hay algo aca.")
 		}
 	}
 
 	method regar(){
 		self.validarRegado()
-		cultivados.cultivoAca(position).serRegado()
+		cultivosEnGranja.cultivoAca(position).serRegado()
 	}
 
 	method validarRegado(){
-		if (!cultivados.hayCultivoAca(position)){
+		if (!cultivosEnGranja.hayCultivoAca(position)){
 			self.error("No hay nada regable aca.")
 		}
 	}
 
 	method cosechar(){
 		self.validarCosechado()
-		const cultivoAca = cultivados.cultivoAca(position)
+		const cultivoAca = cultivosEnGranja.cultivoAca(position)
 		if (cultivoAca.estaListaParaCosecha()){
 			inventario.add(cultivoAca)
 			cultivoAca.serCosechada()
@@ -44,7 +42,7 @@ object personaje {
 	}
 
 	method validarCosechado(){
-		if (!cultivados.hayCultivoAca(position)){
+		if (!cultivosEnGranja.hayCultivoAca(position)){
 			self.error("No hay nada cosechable aca.")
 		}
 	}
@@ -58,10 +56,18 @@ object personaje {
 	*/
 
 	method vender(){
-		if (self.estaSobreAlgo() and game.uniqueCollider(self).puedeComprar(inventario)){
-			game.uniqueCollider(self).comprar(inventario)
+		self.validarVender()
+		const mercado = mercadosEnGranja.mercadoAca(position)
+		if (mercado.puedeComprar(inventario)){
+			mercado.comprar(inventario)
 			monedas = monedas + inventario.sum({cultivo => cultivo.precioDeVenta()})
 			inventario.clear()
+		}
+	}
+
+	method validarVender(){
+		if (!mercadosEnGranja.hayMercadoAca(position)){
+			self.error("No hay un mercado aca")
 		}
 	}
 
@@ -69,14 +75,9 @@ object personaje {
 		game.say(self, "Tengo " + monedas + " monedas, y " + inventario.size() + " plantas para vender")
 	}
 
-	method serRegado(){}
-
 	method ponerAspersor(){
 		self.validarPonerAspersor()
-		const aspersor = new Aspersor(position = position)
-		aspersores.add(aspersor)
-		game.addVisual(aspersor)
-		game.onTick(1000, "Aspersor riega", {aspersor.regar()})
+		aspersoresEnGranja.agregarAspersor(position)
 	}
 
 	method validarPonerAspersor(){
@@ -86,23 +87,20 @@ object personaje {
 	}
 
 	method estaSobreAlgo(){
-		return game.getObjectsIn(position).size() == 2
-	}
-
-	method estaSobreAspersor(){
-		return aspersores.any({aspersor => aspersor.position() == position})
+		return mercadosEnGranja.hayMercadoAca(position) 		  or
+			   aspersoresEnGranja.hayAspersorAca(position) or 
+			   cultivosEnGranja.hayCultivoAca(position)
 	}
 }
 
 object aspersores{
 	const aspersores = #{}
 
-	method agregarAspersor(aspersor){
+	method agregarAspersor(position){
+		const aspersor = new Aspersor(position = position)
 		aspersores.add(aspersor)
-	}
-
-	method eliminarAspersor(aspersor){
-		aspersores.remove(aspersor)
+		game.addVisual(aspersor)
+		game.onTick(1000, "Aspersor riega", {aspersor.regar()})
 	}
 
 	method hayAspersorAca(position){
@@ -120,29 +118,8 @@ class Aspersor{
 	const cultivadas = cultivos
 
 	method regar(){
-		self.regarCruz()
-		self.regarDiagonales()
+		cultivadas.cultivosAlLadoDe(position).forEach({cultivo => cultivo.serRegado()})
 	}
-
-	method regarCruz(){
-		self.regarPosicion(position.up(1))
-		self.regarPosicion(position.down(1))
-		self.regarPosicion(position.right(1))
-		self.regarPosicion(position.left(1))
-	}
-
-	method regarDiagonales(){
-		self.regarPosicion(position.up(1).right(1))
-		self.regarPosicion(position.up(1).left(1))
-		self.regarPosicion(position.down(1).right(1))
-		self.regarPosicion(position.down(1).left(1))
-	}
-
-	method regarPosicion(_position){
-		game.getObjectsIn(_position).forEach({objeto => objeto.serRegado()})
-	}
-
-	method serRegado(){}
 
 	method image(){
 		return image
@@ -178,5 +155,23 @@ class Mercado{
 	method comprar(_inventario){
 		inventario.addAll(_inventario)
 		monedas = monedas - _inventario.sum({cultivo => cultivo.precioDeVenta()})
+	}
+}
+
+object mercados{
+	const mercadosEnGranja = #{}
+
+	method agregarMercado(_position, _monedas){
+		const mercado = new Mercado (position = _position, monedas = _monedas)
+		game.addVisual(mercado)
+		mercadosEnGranja.add(mercado)
+	}
+
+	method hayMercadoAca(position){
+		return mercadosEnGranja.any({mercado => mercado.position() == position})
+	}
+
+	method mercadoAca(position){
+		return mercadosEnGranja.find({mercado => mercado.position() == position})
 	}
 }

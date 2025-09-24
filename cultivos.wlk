@@ -5,6 +5,7 @@ object cultivos{
 
 	method agregarCultivo(cultivo){
 		cultivados.add(cultivo)
+		game.addVisual(cultivo)
 	}
 
 	method eliminarCultivo(cultivo){
@@ -17,6 +18,20 @@ object cultivos{
 
 	method cultivoAca (position){
 		return cultivados.find ({cultivo => cultivo.position() == position})
+	}
+
+	method cultivosAlLadoDe (position){
+		return cultivados.filter({cultivo => cultivo.position().distance(position) == 1 or self.estaEnDiagonalA (cultivo, position)})
+	}
+
+	method estaEnDiagonalA (cultivo, position){
+		const posicionArriba = position.up(1)
+		const posicionAbajo = position.down(1)
+		const posicionDeCultivo = cultivo.position()
+		return posicionDeCultivo == posicionArriba.right(1) or
+			   posicionDeCultivo == posicionArriba.left(1) or
+			   posicionDeCultivo == posicionAbajo.right(1) or
+			   posicionDeCultivo == posicionAbajo.left(1)
 	}
 }
 
@@ -207,6 +222,7 @@ object trigoGigante{
 class Tomaco {
 	var property position
 	const image = "tomaco.png"
+	const cultivosEnGranja = cultivos
 
 	method sembrar(_position){
 		position = _position
@@ -216,8 +232,10 @@ class Tomaco {
 	method serRegado(){
 		if (position.y() == game.height()-1){
 			position = position.down(game.height()-1)
-		} else {
-			position = position.up(1)
+		} else { 
+			if (!cultivosEnGranja.hayCultivoAca(position)){
+				position = position.up(1)
+			}
 		}
 	}
 
