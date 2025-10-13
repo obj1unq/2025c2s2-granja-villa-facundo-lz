@@ -1,53 +1,183 @@
 import wollok.game.*
 
 class Maiz {
-	var property position = game.at(1,1)
-	var image = "corn_baby.png"
+	var property position
+	var estado = maizBebe
 
 	method sembrar(_position){
 		position = _position
 		game.addVisual(self)
 	}
 
-	method regar(){
-		if (image == "corn_baby.png"){
-			image = "corn_adult.png"
-		}
+	method serRegado(){
+		estado = estado.siguienteEstado()
+	}
+
+	method image(){
+		return estado.image()
+	}
+
+	method estaListaParaCosecha(){
+		return estado.estaListaParaCosecha()
+	}
+
+	method serCosechada(){
+		game.removeVisual(self)
+	}
+
+	method precioDeVenta(){
+		return 150
+	}
+}
+
+object maizBebe{
+	const image = "corn_baby.png"
+	const siguienteEstado = maizAdulto
+
+	method siguienteEstado(){
+		return siguienteEstado
 	}
 
 	method image(){
 		return image
+	}
+
+	method estaListaParaCosecha(){
+		return false
+	}
+}
+
+object maizAdulto{
+	const image = "corn_adult.png"
+
+	method siguienteEstado(){
+		return self
+	}
+
+	method image(){
+		return image
+	}
+
+	method estaListaParaCosecha(){
+		return true
 	}
 }
 
 class Trigo {
-	var property position = game.at(1,1)
-	var image = "wheat_0.png"
+	var property position
+	var estado = trigoPequeño
 
 	method sembrar(_position){
 		position = _position
 		game.addVisual(self)
 	}
 
-	method regar(){
-		if (image == "wheat_0.png"){
-			image = "wheat_1.png"
-		} else if (image == "wheat_1.png"){
-			image = "wheat_2.png"
-		} else if (image == "wheat_2.png"){
-			image = "wheat_3.png"
-		} else {
-			image = "wheat_0.png"
-		}
+	method serRegado(){
+		estado = estado.siguienteEstado()
+	}
+
+	method image(){
+		return estado.image()
+	}
+
+	method estaListaParaCosecha(){
+		return estado.estaListaParaCosecha()
+	}
+
+	method serCosechada(){
+		game.removeVisual(self)
+	}
+
+	method precioDeVenta(){
+		return estado.precioDeVenta()
+	}
+}
+
+object trigoPequeño{
+	const image = "wheat_0.png"
+	const siguienteEstado = trigoNormal
+
+	method siguienteEstado(){
+		return siguienteEstado
 	}
 
 	method image(){
 		return image
 	}
+
+	method estaListaParaCosecha(){
+		return false
+	}
+
+	method precioDeVenta(){
+		return 100
+	}
+}
+
+object trigoNormal{
+	const image = "wheat_1.png"
+	const siguienteEstado = trigoGrande
+
+	method siguienteEstado(){
+		return siguienteEstado
+	}
+
+	method image(){
+		return image
+	}
+
+	method estaListaParaCosecha(){
+		return false
+	}
+
+	method precioDeVenta(){
+		return 200
+	}
+}
+
+object trigoGrande{
+	const image = "wheat_2.png"
+	const siguienteEstado = trigoGigante
+
+	method siguienteEstado(){
+		return siguienteEstado
+	}
+
+	method image(){
+		return image
+	}
+
+	method estaListaParaCosecha(){
+		return true
+	}
+
+	method precioDeVenta(){
+		return 300
+	}
+}
+
+object trigoGigante{
+	const image = "wheat_3.png"
+
+	method siguienteEstado(){
+		return self
+	}
+
+	method image(){
+		return image
+	}
+
+	method estaListaParaCosecha(){
+		return true
+	}
+
+	method precioDeVenta(){
+		return 400
+	}
 }
 
 class Tomaco {
-	var property position = game.at(1,1)
+	var property position
 	const image = "tomaco.png"
 
 	method sembrar(_position){
@@ -55,7 +185,7 @@ class Tomaco {
 		game.addVisual(self)
 	}
 
-	method regar(){
+	method serRegado(){
 		if (position.y() == game.height()-1){
 			position = position.down(game.height()-1)
 		} else {
@@ -65,5 +195,17 @@ class Tomaco {
 
 	method image(){
 		return image
+	}
+
+	method estaListaParaCosecha(){
+		return true
+	}
+
+	method serCosechada(){
+		game.removeVisual(self)
+	}
+
+	method precioDeVenta(){
+		return 80
 	}
 }

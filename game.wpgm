@@ -11,11 +11,17 @@ program farmville {
 
 	//  VISUALES
  	game.addVisualCharacter(personaje)
-	keyboard.m().onPressDo({personaje.sembrar(new Maiz())})
-	keyboard.t().onPressDo({personaje.sembrar(new Trigo())})
-	keyboard.o().onPressDo({personaje.sembrar(new Tomaco())})
+	
+	// CONTROLES
+	keyboard.m().onPressDo({personaje.sembrar(new Maiz(position = personaje.position()))})
+	keyboard.t().onPressDo({personaje.sembrar(new Trigo(position = personaje.position()))})
+	keyboard.o().onPressDo({personaje.sembrar(new Tomaco(position = personaje.position()))})
 	keyboard.r().onPressDo({personaje.regar()})
- 	
+ 	keyboard.c().onPressDo({personaje.cosechar()})
+	keyboard.v().onPressDo({personaje.vender()})
+	keyboard.space().onPressDo({personaje.hablarDeVentas()})
+	keyboard.a().onPressDo({personaje.ponerAspersor()})
+
  	//  COMIENZA
 	game.start()
 }
