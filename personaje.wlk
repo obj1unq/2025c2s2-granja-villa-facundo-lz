@@ -1,57 +1,72 @@
 import wollok.game.*
+import cultivos.*
 
 object personaje {
 	var property position = game.center()
 	const property image = "fplayer.png"
-	const cultivadasHastaAhora = #{}
+	const inventario = #{}
 	const aspersores = #{}
+	const cultivados = cultivos
+	const aspersores = aspersores
 	var monedas = 0
 
 	method sembrar(semilla){
 		self.validarSembrado()
 		semilla.position(position)
 		game.addVisual(semilla)
+		cultivados.agregarCultivo(semilla)
 	}
 
 	method validarSembrado(){
-		if (self.estaSobreAlgo()){
+		if (cultivados.hayCultivoAca(position)){
 			self.error("Ya hay algo aca.")
 		}
 	}
 
 	method regar(){
 		self.validarRegado()
-		game.uniqueCollider(self).serRegada()
+		cultivados.cultivoAca(position).serRegado()
 	}
 
 	method validarRegado(){
-		if (!self.estaSobreAlgo() or self.estaSobreAspersor()){
+		if (!cultivados.hayCultivoAca(position)){
 			self.error("No hay nada regable aca.")
 		}
 	}
 
 	method cosechar(){
 		self.validarCosechado()
-		const cultivoAca = game.uniqueCollider(self)
+		const cultivoAca = cultivados.cultivoAca(position)
 		if (cultivoAca.estaListaParaCosecha()){
-			cultivadasHastaAhora.add(cultivoAca)
+			inventario.add(cultivoAca)
 			cultivoAca.serCosechada()
 		}
 	}
 
 	method validarCosechado(){
-		if (!self.estaSobreAlgo() or self.estaSobreAspersor()){
+		if (!cultivados.hayCultivoAca(position)){
 			self.error("No hay nada cosechable aca.")
 		}
 	}
 
+	/* VENDER DE ANTES DEL BONUS
+
 	method vender(){
-		monedas += cultivadasHastaAhora.sum({cultivo => cultivo.precioDeVenta()})
-		cultivadasHastaAhora.clear()
+		monedas += self.valorDeInventario()
+		inventario.clear()
+	}
+	*/
+
+	method vender(){
+		if (self.estaSobreAlgo() and game.uniqueCollider(self).puedeComprar(inventario)){
+			game.uniqueCollider(self).comprar(inventario)
+			monedas = monedas + inventario.sum({cultivo => cultivo.precioDeVenta()})
+			inventario.clear()
+		}
 	}
 
 	method hablarDeVentas(){
-		game.say(self, "Tengo " + monedas + " monedas, y " + cultivadasHastaAhora.size() + " plantas para vender")
+		game.say(self, "Tengo " + monedas + " monedas, y " + inventario.size() + " plantas para vender")
 	}
 
 	method serRegado(){}
@@ -79,9 +94,30 @@ object personaje {
 	}
 }
 
+object aspersores{
+	const aspersores = #{}
+
+	method agregarAspersor(aspersor){
+		aspersores.add(aspersor)
+	}
+
+	method eliminarAspersor(aspersor){
+		aspersores.remove(aspersor)
+	}
+
+	method hayAspersorAca(position){
+		return aspersores.any({aspersor => aspersor.position() == position})
+	}
+
+	method aspersoresAca (position){
+		return aspersores.find ({aspersor => aspersor.position() == position})
+	}
+}
+
 class Aspersor{
 	const position
 	const image = "aspersor.png"
+	const cultivadas = cultivos
 
 	method regar(){
 		self.regarCruz()
@@ -115,13 +151,17 @@ class Aspersor{
 	method position(){
 		return position
 	}
+
+	method puedeComprar (valorDeInventario){
+		return false
+	}
 }
 
 class Mercado{
 	const position
 	const image = "market.png"
 	const inventario = #{}
-	const monedas = 1000
+	var monedas
 
 	method position(){
 		return position
@@ -131,5 +171,12 @@ class Mercado{
 		return image
 	}
 
-	method comprar(){}
+	method puedeComprar(_inventario){
+		return monedas >= _inventario.sum({cultivo => cultivo.precioDeVenta()})
+	}
+
+	method comprar(_inventario){
+		inventario.addAll(_inventario)
+		monedas = monedas - _inventario.sum({cultivo => cultivo.precioDeVenta()})
+	}
 }

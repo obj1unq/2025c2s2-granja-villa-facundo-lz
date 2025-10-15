@@ -1,5 +1,25 @@
 import wollok.game.*
 
+object cultivos{
+	const cultivados = #{}
+
+	method agregarCultivo(cultivo){
+		cultivados.add(cultivo)
+	}
+
+	method eliminarCultivo(cultivo){
+		cultivados.remove(cultivo)
+	}
+
+	method hayCultivoAca(position){
+		return cultivados.any({cultivo => cultivo.position() == position})
+	}
+
+	method cultivoAca (position){
+		return cultivados.find ({cultivo => cultivo.position() == position})
+	}
+}
+
 class Maiz {
 	var property position
 	var estado = maizBebe
@@ -27,6 +47,10 @@ class Maiz {
 
 	method precioDeVenta(){
 		return 150
+	}
+
+	method puedeComprar (valorDeInventario){
+		return false
 	}
 }
 
@@ -90,6 +114,10 @@ class Trigo {
 
 	method precioDeVenta(){
 		return estado.precioDeVenta()
+	}
+
+	method puedeComprar (valorDeInventario){
+		return false
 	}
 }
 
@@ -207,5 +235,9 @@ class Tomaco {
 
 	method precioDeVenta(){
 		return 80
+	}
+
+	method puedeComprar (valorDeInventario){
+		return false
 	}
 }
