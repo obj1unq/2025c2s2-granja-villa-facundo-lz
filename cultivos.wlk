@@ -1,43 +1,10 @@
 import wollok.game.*
-
-object cultivos{
-	const cultivados = #{}
-
-	method agregarCultivo(cultivo){
-		cultivados.add(cultivo)
-		game.addVisual(cultivo)
-	}
-
-	method eliminarCultivo(cultivo){
-		cultivados.remove(cultivo)
-	}
-
-	method hayCultivoAca(position){
-		return cultivados.any({cultivo => cultivo.position() == position})
-	}
-
-	method cultivoAca (position){
-		return cultivados.find ({cultivo => cultivo.position() == position})
-	}
-
-	method cultivosAlLadoDe (position){
-		return cultivados.filter({cultivo => cultivo.position().distance(position) == 1 or self.estaEnDiagonalA (cultivo, position)})
-	}
-
-	method estaEnDiagonalA (cultivo, position){
-		const posicionArriba = position.up(1)
-		const posicionAbajo = position.down(1)
-		const posicionDeCultivo = cultivo.position()
-		return posicionDeCultivo == posicionArriba.right(1) or
-			   posicionDeCultivo == posicionArriba.left(1) or
-			   posicionDeCultivo == posicionAbajo.right(1) or
-			   posicionDeCultivo == posicionAbajo.left(1)
-	}
-}
+import granjaYSusElementos.*
 
 class Maiz {
 	var property position
 	var estado = maizBebe
+	const granjaActual = granja
 
 	method sembrar(_position){
 		position = _position
@@ -58,14 +25,15 @@ class Maiz {
 
 	method serCosechada(){
 		game.removeVisual(self)
+		granjaActual.eliminarCultivo(self)
 	}
 
 	method precioDeVenta(){
 		return 150
 	}
 
-	method puedeComprar (valorDeInventario){
-		return false
+	method estado(){ // No es necesario para el funcionamiento del juego, pero es util para hacer test.
+		return estado
 	}
 }
 
@@ -105,6 +73,7 @@ object maizAdulto{
 class Trigo {
 	var property position
 	var estado = trigoPequeño
+	const granjaActual = granja
 
 	method sembrar(_position){
 		position = _position
@@ -125,14 +94,15 @@ class Trigo {
 
 	method serCosechada(){
 		game.removeVisual(self)
+		granjaActual.eliminarCultivo(self)
 	}
 
 	method precioDeVenta(){
 		return estado.precioDeVenta()
 	}
 
-	method puedeComprar (valorDeInventario){
-		return false
+	method estado(){ // No es necesario para el funcionamiento del juego, pero es util para hacer test.
+		return estado
 	}
 }
 
@@ -153,7 +123,7 @@ object trigoPequeño{
 	}
 
 	method precioDeVenta(){
-		return 100
+		return 0
 	}
 }
 
@@ -174,7 +144,7 @@ object trigoNormal{
 	}
 
 	method precioDeVenta(){
-		return 200
+		return 0
 	}
 }
 
@@ -195,15 +165,16 @@ object trigoGrande{
 	}
 
 	method precioDeVenta(){
-		return 300
+		return 100
 	}
 }
 
 object trigoGigante{
 	const image = "wheat_3.png"
+	const siguienteEstado = trigoPequeño
 
 	method siguienteEstado(){
-		return self
+		return siguienteEstado
 	}
 
 	method image(){
@@ -215,14 +186,14 @@ object trigoGigante{
 	}
 
 	method precioDeVenta(){
-		return 400
+		return 200
 	}
 }
 
 class Tomaco {
 	var property position
 	const image = "tomaco.png"
-	const cultivosEnGranja = cultivos
+	const granjaActual = granja
 
 	method sembrar(_position){
 		position = _position
@@ -231,11 +202,15 @@ class Tomaco {
 
 	method serRegado(){
 		if (position.y() == game.height()-1){
-			position = position.down(game.height()-1)
-		} else { 
-			if (!cultivosEnGranja.hayCultivoAca(position)){
-				position = position.up(1)
-			}
+			self.moverSiPuede (position.down(game.height()-1))
+		} else {
+			self.moverSiPuede (position.up(1))
+		}
+	}
+
+	method moverSiPuede(_position){
+		if (!granjaActual.hayAlgoAca(_position)){
+				position = _position
 		}
 	}
 
@@ -249,13 +224,10 @@ class Tomaco {
 
 	method serCosechada(){
 		game.removeVisual(self)
+		granjaActual.eliminarCultivo(self)
 	}
 
 	method precioDeVenta(){
 		return 80
-	}
-
-	method puedeComprar (valorDeInventario){
-		return false
 	}
 }

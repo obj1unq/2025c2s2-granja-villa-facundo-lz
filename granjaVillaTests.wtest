@@ -1,0 +1,215 @@
+import wollok.game.*
+import personaje.*
+import granjaYSusElementos.*
+import cultivos.*
+
+describe "Granja Villa: Pruebas de cosecha"{
+    test "Cosecha: Maiz" {
+        personaje.sembrar(new Maiz (position = personaje.position()))
+        assert.equals(1, game.colliders(personaje).size())
+        assert.equals("cultivos.Maiz", game.uniqueCollider(personaje).className())
+    }
+
+    test "Cosecha: Trigo" {
+        personaje.sembrar(new Trigo (position = personaje.position()))
+        assert.equals(1, game.colliders(personaje).size())
+        assert.equals("cultivos.Trigo", game.uniqueCollider(personaje).className())
+    }
+
+    test "Cosecha: Tomaco" {
+        personaje.sembrar(new Tomaco (position = personaje.position()))
+        assert.equals(1, game.colliders(personaje).size())
+        assert.equals("cultivos.Tomaco", game.uniqueCollider(personaje).className())
+    }
+
+    test "Cosecha: No hay dos cultivos en un mismo lugar"{
+        personaje.sembrar(new Maiz (position = personaje.position()))
+        assert.throwsException({personaje.sembrar(new Maiz (position = personaje.position()))})
+    }
+}
+
+describe "Granja Villa: Pruebas de regado"{
+    test "Regado: Maiz" {
+        personaje.sembrar(new Maiz (position = personaje.position()))
+        assert.equals(maizBebe, game.uniqueCollider(personaje).estado())
+        personaje.regar()
+        assert.equals(maizAdulto, game.uniqueCollider(personaje).estado())
+        personaje.regar()
+        assert.equals(maizAdulto, game.uniqueCollider(personaje).estado())
+    }
+
+    test "Regado: Trigo" {
+        personaje.sembrar(new Trigo (position = personaje.position()))
+        assert.equals(trigoPequeño, game.uniqueCollider(personaje).estado())
+        personaje.regar()
+        assert.equals(trigoNormal, game.uniqueCollider(personaje).estado())
+        personaje.regar()
+        assert.equals(trigoGrande, game.uniqueCollider(personaje).estado())
+        personaje.regar()
+        assert.equals(trigoGigante, game.uniqueCollider(personaje).estado())
+        personaje.regar()
+        assert.equals(trigoPequeño, game.uniqueCollider(personaje).estado())
+    }
+
+    test "Regado: Tomaco"{
+        personaje.sembrar(new Tomaco (position = personaje.position()))
+        personaje.regar()
+        personaje.position(personaje.position().up(1))
+        assert.equals("cultivos.Tomaco", game.uniqueCollider(personaje).className()) // Se verifica que el tomaco se movio una posicion hacia arriba.
+    }
+
+    test "Regado: No hay nada para regar."{
+        assert.throwsException({personaje.regar()})
+    }
+}
+
+describe "Granja Villa: Cosechado"{
+    test "Cosechado: Maiz" {
+        personaje.sembrar(new Maiz (position = personaje.position()))
+        assert.notThat(game.uniqueCollider(personaje).estaListaParaCosecha())
+        personaje.cosechar()
+        assert.equals(1, game.colliders(personaje).size()) // Se prueba que el maiz no se cosecho por no estar listo para cosecharse (es decir, sigue existiendo en la misma celda que el personaje.)
+        personaje.regar()
+        assert.that(game.uniqueCollider(personaje).estaListaParaCosecha())
+        personaje.cosechar()
+        assert.equals(0, game.colliders(personaje).size()) // Se prueba que el maiz ya se cosecho.
+    }
+
+    test "Cosechado: Trigo" {
+        personaje.sembrar(new Trigo (position = personaje.position()))
+        assert.notThat(game.uniqueCollider(personaje).estaListaParaCosecha())
+        personaje.cosechar()
+        assert.equals(1, game.colliders(personaje).size()) // Se prueba que el trigo no se cosecho por no estar listo para cosecharse (es decir, sigue existiendo en la misma celda que el personaje.)
+        personaje.regar()
+        assert.notThat(game.uniqueCollider(personaje).estaListaParaCosecha())
+        personaje.cosechar()
+        assert.equals(1, game.colliders(personaje).size()) // Se prueba que el trigo no se cosecho por no estar listo para cosecharse (es decir, sigue existiendo en la misma celda que el personaje.)
+        personaje.regar()
+        assert.that(game.uniqueCollider(personaje).estaListaParaCosecha())
+        personaje.cosechar()
+        assert.equals(0, game.colliders(personaje).size()) // Se prueba que el trigo ya se cosecho.
+    }
+
+    test "Cosechado: Tomaco" {
+        personaje.sembrar(new Maiz (position = personaje.position()))
+        assert.equals(maizBebe, game.uniqueCollider(personaje).estado())
+        personaje.regar()
+        assert.equals(maizAdulto, game.uniqueCollider(personaje).estado())
+        personaje.regar()
+        assert.equals(maizAdulto, game.uniqueCollider(personaje).estado())
+    }
+
+    test "Cosechado: No hay nada para cosechar"{
+        assert.throwsException({personaje.cosechar()})
+    }
+}
+
+describe "Granja Villa: Vender pre bonus"{
+    test "Venta preBonus: Trigo"{
+        personaje.sembrar(new Trigo (position = personaje.position()))
+        personaje.regar()
+        personaje.regar()
+        personaje.cosechar()
+        personaje.sembrar(new Trigo (position = personaje.position()))
+        personaje.regar()
+        personaje.regar()
+        personaje.regar()
+        personaje.cosechar()
+        personaje.venderPreBonus()
+        assert.equals(300, personaje.monedas())
+    }
+
+    test "Venta preBonus: Maiz"{
+        personaje.sembrar(new Maiz (position = personaje.position()))
+        personaje.regar()
+        personaje.cosechar()
+        personaje.sembrar(new Maiz (position = personaje.position()))
+        personaje.regar()
+        personaje.cosechar()
+        personaje.sembrar(new Maiz (position = personaje.position()))
+        personaje.regar()
+        personaje.cosechar()
+        personaje.venderPreBonus()
+        assert.equals(450, personaje.monedas())
+    }
+
+    test "Venta preBonus: Tomaco"{
+        personaje.sembrar(new Tomaco (position = personaje.position()))
+        personaje.cosechar()
+        personaje.sembrar(new Tomaco (position = personaje.position()))
+        personaje.cosechar()
+        personaje.sembrar(new Tomaco (position = personaje.position()))
+        personaje.cosechar()
+        personaje.venderPreBonus()
+        assert.equals(240, personaje.monedas())
+    }
+
+    test "Venta preBonus: Uno de cada"{
+        personaje.sembrar(new Trigo (position = personaje.position()))
+        personaje.regar()
+        personaje.regar()
+        personaje.regar()
+        personaje.cosechar()
+        personaje.venderPreBonus()
+        assert.equals(200, personaje.monedas())
+        personaje.sembrar(new Maiz (position = personaje.position()))
+        personaje.regar()
+        personaje.cosechar()
+        personaje.venderPreBonus()
+        assert.equals(350, personaje.monedas())
+        personaje.sembrar(new Tomaco (position = personaje.position()))
+        personaje.cosechar()
+        personaje.venderPreBonus()
+        assert.equals(430, personaje.monedas())
+    }
+
+    test "Venta preBonus: No se vendio nada"{
+        personaje.venderPreBonus()
+        assert.equals(0, personaje.monedas())
+    }
+}
+
+describe "Granja Villa: Aspersores BONUS"{
+    // Como los aspersores funciona cada cierta cantidad de tiempo, no se pueden testear fiablemente.
+    test "No se puede poner aspersor aca."{
+        personaje.sembrar(new Maiz (position = personaje.position()))
+        assert.throwsException({personaje.ponerAspersor()})
+    }
+}
+
+describe "Granja Villa: Venta BONUS" {
+    method initialize(){ // Se cosecha uno de cada cultivo diferente del juego.
+        personaje.sembrar(new Trigo (position = personaje.position()))
+        personaje.regar()
+        personaje.regar()
+        personaje.regar()
+        personaje.cosechar()
+        personaje.sembrar(new Maiz (position = personaje.position()))
+        personaje.regar()
+        personaje.cosechar()
+        personaje.sembrar(new Tomaco (position = personaje.position()))
+        personaje.cosechar()
+    }
+
+    test "Venta: Uno de cada"{
+        mercados.agregarMercado(personaje.position(), 1000)
+        personaje.vender()
+        assert.equals(0, personaje.inventario().size())
+        assert.equals(430, personaje.monedas())
+        assert.equals(3, mercados.mercadoAca(personaje.position()).inventario().size())
+        assert.equals(570, mercados.mercadoAca(personaje.position()).monedas())
+    }
+
+    test "Venta: Mercado no tiene suficientes monedas"{
+        mercados.agregarMercado(personaje.position(), 100)
+        personaje.vender()
+        assert.equals(3, personaje.inventario().size())
+        assert.equals(0, personaje.monedas())
+        assert.equals(0, mercados.mercadoAca(personaje.position()).inventario().size())
+        assert.equals(100, mercados.mercadoAca(personaje.position()).monedas())
+    }
+
+    test "Venta: No hay mercado aca"{
+        assert.throwsException({personaje.vender()})
+    }
+}
